@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  # Service untuk aplikasi Node.js (item-app)
+  item-app:
+    image: shendyeff/item-app:v1
+    ports:
+      - '80:8080' # Melakukan port mapping dari port 80 host Windows ke port 8080 container
+    depends_on:
+      - item-db # Memastikan item-app baru menyala setelah item-db siap
+    restart: always # Saran 5 star: Container otomatis restart jika crash atau Docker service restart
+
+  # Service untuk database MongoDB versi 3 (item-db)
+  item-db:
+    image: mongo:3
+    volumes:
+      - app-db:/data/db # Menyimpan data persisten MongoDB ke volume Docker bernama app-db
+    restart: always # Saran 5 star: Container database otomatis restart
+
+# Definisi volume global untuk persistensi data MongoDB
+volumes:
+  app-db:
+    external: false
