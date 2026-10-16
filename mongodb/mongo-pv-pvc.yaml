@@ -1,0 +1,30 @@
+# Menggunakan API core/v1 untuk membuat PersistentVolumeClaim.
+apiVersion: v1
+
+# Menentukan resource sebagai permintaan penyimpanan persisten.
+kind: PersistentVolumeClaim
+
+# Mendefinisikan identitas klaim penyimpanan MongoDB.
+metadata:
+  # Nama PVC yang akan digunakan oleh StatefulSet MongoDB.
+  name: mongo-pvc
+
+  # Menempatkan PVC dalam namespace aplikasi Karsa Jobs.
+  namespace: karsajobs
+
+# Menentukan kebutuhan dan karakteristik penyimpanan.
+spec:
+  # Mengizinkan satu node memasang volume untuk kebutuhan baca-tulis.
+  accessModes:
+    - ReadWriteOnce
+
+  # Menggunakan StorageClass standard yang tersedia pada Minikube.
+  # Provisioner cluster akan menyediakan volume secara dinamis.
+  storageClassName: standard
+
+  # Menentukan kapasitas penyimpanan yang diminta.
+  resources:
+    # Mendefinisikan kebutuhan resource penyimpanan.
+    requests:
+      # Meminta ruang penyimpanan sebesar 2 GiB.
+      storage: 2Gi

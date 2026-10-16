@@ -1,0 +1,22 @@
+# Menggunakan API core/v1 untuk membuat ConfigMap.
+apiVersion: v1
+
+# Menentukan resource sebagai ConfigMap untuk konfigurasi MongoDB.
+kind: ConfigMap
+
+# Mendefinisikan identitas ConfigMap.
+metadata:
+  # Nama ConfigMap yang direferensikan oleh StatefulSet MongoDB.
+  name: mongo-config
+
+  # Menempatkan ConfigMap dalam namespace aplikasi Karsa Jobs.
+  namespace: karsajobs
+
+# Menyimpan konfigurasi dalam pasangan key-value.
+data:
+  # Nama file konfigurasi yang akan dibuat saat volume dipasang.
+  mongo.conf: |
+    # Menentukan lokasi penyimpanan data MongoDB.
+    storage:
+      # Menggunakan direktori data yang dipasang dari persistent volume.
+      dbPath: /data/db

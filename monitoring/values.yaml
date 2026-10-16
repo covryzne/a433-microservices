@@ -1,0 +1,81 @@
+# ============================================================
+# Karsa Jobs - Kubernetes Monitoring Configuration
+# Helm chart: prometheus-community/kube-prometheus-stack
+# Namespace: monitoring
+# ============================================================
+
+# ------------------------------------------------------------
+# Grafana: visualization and dashboards
+# ------------------------------------------------------------
+grafana:
+  # Enable Grafana deployment.
+  enabled: true
+
+  # Disable persistent storage to reduce disk usage in Minikube.
+  persistence:
+    enabled: false
+
+  # Limit Grafana resource consumption.
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+  # Automatically import the dashboard recommended by the rubric.
+  dashboards:
+    default:
+      kubernetes-cluster-prometheus:
+        # Dashboard ID from Grafana.com.
+        gnetId: 6417
+
+        # Dashboard revision to import.
+        revision: 1
+
+        # Match the Prometheus datasource provisioned by the chart.
+        datasource: Prometheus
+
+# ------------------------------------------------------------
+# Prometheus: metrics collection and storage
+# ------------------------------------------------------------
+prometheus:
+  # Enable Prometheus deployment.
+  enabled: true
+
+  prometheusSpec:
+    # Retain metrics for 24 hours to limit storage consumption.
+    retention: 24h
+
+    # Do not request a persistent volume for this local setup.
+    storageSpec: {}
+
+    # Limit Prometheus resource consumption.
+    resources:
+      requests:
+        cpu: 200m
+        memory: 512Mi
+      limits:
+        cpu: 1000m
+        memory: 1536Mi
+
+# ------------------------------------------------------------
+# Kubernetes metrics exporters
+# ------------------------------------------------------------
+
+# Export Kubernetes object metrics: pods, deployments, and more.
+kubeStateMetrics:
+  enabled: true
+
+# Export node metrics such as CPU, memory, and filesystem usage.
+nodeExporter:
+  enabled: true
+
+# This cluster runs Linux, so Windows metrics are unnecessary.
+windowsMonitoring:
+  enabled: false
+
+# Disable Alertmanager because alerting is outside the current scope.
+alertmanager:
+  enabled: false

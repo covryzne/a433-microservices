@@ -1,0 +1,91 @@
+# Menggunakan API apps/v1 untuk resource Deployment.
+apiVersion: apps/v1
+
+# Menentukan resource untuk mengelola replika aplikasi backend.
+kind: Deployment
+
+# Menetapkan identitas dan namespace Deployment.
+metadata:
+  # Nama Deployment backend Karsa Jobs.
+  name: karsajobs
+  # Memisahkan resource aplikasi dari namespace latihan lainnya.
+  namespace: karsajobs
+
+# Mendefinisikan konfigurasi replika dan Pod backend.
+spec:
+  # Menjalankan satu replika backend untuk lingkungan latihan.
+  replicas: 1
+
+  # Menentukan label Pod yang dikelola Deployment ini.
+  selector:
+    matchLabels:
+      # Harus sama dengan label pada template Pod.
+      app: karsajobs
+
+  # Mendefinisikan spesifikasi Pod backend.
+  template:
+    metadata:
+      # Memberi label agar Deployment dan Service menemukan Pod ini.
+      labels:
+        app: karsajobs
+
+    spec:
+      # Mendefinisikan container aplikasi backend.
+      containers:
+        - # Nama container backend di dalam Pod.
+          name: karsajobs
+
+          # Image backend yang telah dipublikasikan ke GitHub Container Registry.
+          image: ghcr.io/covryzne/karsajobs:latest
+
+          # Menggunakan image yang tersedia di node; mengunduh jika belum tersedia.
+          imagePullPolicy: IfNotPresent
+
+          # Menetapkan port aplikasi Go di dalam container.
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+
+          # Mengatur konfigurasi aplikasi melalui environment variable.
+          env:
+            # Port yang digunakan aplikasi Go untuk menerima request.
+            - name: APP_PORT
+              value: '8080'
+
+            # DNS Service MongoDB di namespace yang sama.
+            - name: MONGO_HOST
+              value: 'mongo-service'
+
+            # Membaca username MongoDB dari Kubernetes Secret.
+            - name: MONGO_USER
+              valueFrom:
+                secretKeyRef:
+                  # Nama Secret yang dibuat pada tahap MongoDB.
+                  name: mongo-secret
+                  # Key Secret yang berisi username root.
+                  key: MONGO_ROOT_USERNAME
+
+            # Membaca password MongoDB dari Kubernetes Secret.
+            - name: MONGO_PASS
+              valueFrom:
+                secretKeyRef:
+                  # Menggunakan Secret yang sama untuk kredensial database.
+                  name: mongo-secret
+                  # Key Secret yang berisi password root.
+                  key: MONGO_ROOT_PASSWORD
+
+          # Menentukan kebutuhan minimum dan batas resource container.
+          resources:
+            # Menetapkan resource minimum yang diminta container.
+            requests:
+              # Meminta 100 millicore CPU.
+              cpu: '100m'
+              # Meminta memori sebesar 128 MiB.
+              memory: '128Mi'
+            # Membatasi penggunaan resource agar tidak berlebihan.
+            limits:
+              # Membatasi penggunaan CPU hingga satu core.
+              cpu: '500m'
+              # Membatasi penggunaan memori hingga 512 MiB.
+              memory: '512Mi'

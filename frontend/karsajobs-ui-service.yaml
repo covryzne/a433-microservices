@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: Service
+metadata:
+  # Nama Service untuk mengakses frontend.
+  name: karsajobs-ui
+  # Namespace harus sama dengan Deployment frontend.
+  namespace: karsajobs
+spec:
+  # Membuka akses melalui NodePort Minikube.
+  type: NodePort
+  selector:
+    # Meneruskan traffic ke Pod dengan label ini.
+    app: karsajobs-ui
+  ports:
+    - name: http
+      # Port Service yang diakses pengguna.
+      port: 8000
+      # Port server frontend di dalam Pod.
+      targetPort: 8000
+      # Port NodePort khusus frontend.
+      nodePort: 30002
+      protocol: TCP

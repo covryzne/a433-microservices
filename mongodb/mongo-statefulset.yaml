@@ -1,0 +1,192 @@
+# Menggunakan API apps/v1 untuk membuat StatefulSet.
+apiVersion: apps/v1
+
+# Menentukan resource sebagai StatefulSet untuk MongoDB.
+kind: StatefulSet
+
+# Mendefinisikan identitas StatefulSet.
+metadata:
+  # Nama StatefulSet yang mengelola pod MongoDB.
+  name: mongodb
+
+  # Menempatkan StatefulSet dalam namespace aplikasi Karsa Jobs.
+  namespace: karsajobs
+
+# Menentukan konfigurasi StatefulSet.
+spec:
+  # Nama Service yang menyediakan identitas jaringan untuk pod StatefulSet.
+  serviceName: mongo-service
+
+  # Menjalankan satu replika MongoDB untuk lingkungan latihan single-node.
+  replicas: 1
+
+  # Menentukan label yang digunakan untuk memilih pod yang dikelola.
+  selector:
+    # Label pod harus cocok dengan label pada template pod.
+    matchLabels:
+      app: mongodb
+
+  # Mendefinisikan template untuk pod MongoDB.
+  template:
+    # Metadata untuk setiap pod yang dibuat StatefulSet.
+    metadata:
+      # Label yang digunakan Service dan StatefulSet untuk memilih pod.
+      labels:
+        app: mongodb
+
+    # Mendefinisikan konfigurasi container dan volume pod.
+    spec:
+      # Mendefinisikan container MongoDB yang berjalan di dalam pod.
+      containers:
+        - # Nama container dalam pod.
+          name: mongodb
+
+          # Menggunakan image MongoDB versi 7.0.
+          image: mongo:7.0
+
+          # Menggunakan image lokal jika tersedia; jika tidak, Kubernetes dapat menariknya.
+          imagePullPolicy: IfNotPresent
+
+          # Mendefinisikan port yang digunakan proses MongoDB.
+          ports:
+            - # Nama port untuk identifikasi dan dokumentasi.
+              name: mongodb
+
+              # Port default MongoDB di dalam container.
+              containerPort: 27017
+
+          # Mengatur kredensial root yang dibaca saat inisialisasi database.
+          env:
+            - # Meminta image resmi MongoDB membaca username dari file Secret.
+              name: MONGO_INITDB_ROOT_USERNAME_FILE
+
+              # Lokasi file username setelah Secret dipasang sebagai volume.
+              value: /etc/mongo-credentials/MONGO_ROOT_USERNAME
+
+            - # Meminta image resmi MongoDB membaca password dari file Secret.
+              name: MONGO_INITDB_ROOT_PASSWORD_FILE
+
+              # Lokasi file password setelah Secret dipasang sebagai volume.
+              value: /etc/mongo-credentials/MONGO_ROOT_PASSWORD
+
+          # Memasang volume ke direktori di dalam container.
+          volumeMounts:
+            - # Nama volume persisten yang didefinisikan pada bagian volumes.
+              name: mongo-storage
+
+              # Lokasi penyimpanan data database MongoDB.
+              mountPath: /data/db
+
+            - # Nama volume yang berisi konfigurasi MongoDB.
+              name: mongo-config
+
+              # Lokasi pemasangan file mongo.conf.
+              mountPath: /config
+
+              # Mencegah container mengubah file konfigurasi yang dipasang.
+              readOnly: true
+
+            - # Nama volume yang berisi kredensial dari Secret.
+              name: mongo-credentials
+
+              # Lokasi file kredensial yang dibaca saat inisialisasi.
+              mountPath: /etc/mongo-credentials
+
+              # Mencegah container mengubah file kredensial.
+              readOnly: true
+
+          # Memeriksa apakah MongoDB siap menerima koneksi.
+          readinessProbe:
+            # Menjalankan perintah pemeriksaan di dalam container.
+            exec:
+              # Meminta mongosh menguji koneksi database lalu memeriksa hasil ping.
+              command:
+                - sh
+                - -c
+                - mongosh --quiet --eval 'db.adminCommand("ping").ok' | grep 1
+
+            # Memberi waktu awal bagi database untuk melakukan inisialisasi.
+            initialDelaySeconds: 10
+
+            # Mengulang pemeriksaan kesiapan setiap 5 detik.
+            periodSeconds: 5
+
+            # Membatasi waktu tunggu setiap pemeriksaan.
+            timeoutSeconds: 3
+
+            # Menandai pemeriksaan gagal setelah 12 kegagalan berturut-turut.
+            failureThreshold: 12
+
+          # Memeriksa apakah proses MongoDB masih sehat.
+          livenessProbe:
+            # Menjalankan pemeriksaan kesehatan di dalam container.
+            exec:
+              # Menguji koneksi MongoDB melalui perintah ping.
+              command:
+                - sh
+                - -c
+                - mongosh --quiet --eval 'db.adminCommand("ping").ok' | grep 1
+
+            # Menunda pemeriksaan awal agar database memiliki waktu untuk mulai.
+            initialDelaySeconds: 30
+
+            # Mengulang pemeriksaan kesehatan setiap 10 detik.
+            periodSeconds: 10
+
+            # Membatasi waktu tunggu setiap pemeriksaan.
+            timeoutSeconds: 3
+
+            # Memicu restart container setelah 6 kegagalan berturut-turut.
+            failureThreshold: 6
+
+          # Mengatur resource komputasi untuk container MongoDB.
+          resources:
+            # Menentukan resource minimum yang diminta scheduler.
+            requests:
+              # Meminta CPU sebesar 100 millicore.
+              cpu: 100m
+
+              # Meminta memori sebesar 256 MiB.
+              memory: 256Mi
+
+            # Menentukan batas maksimum resource container.
+            limits:
+              # Membatasi penggunaan CPU hingga 1 core.
+              cpu: '1'
+
+              # Membatasi penggunaan memori hingga 1 GiB.
+              memory: 1Gi
+
+      # Mendefinisikan volume yang tersedia bagi container dalam pod.
+      volumes:
+        - # Volume untuk menyimpan data database secara persisten.
+          name: mongo-storage
+
+          # Menghubungkan volume ke PVC yang telah dibuat.
+          persistentVolumeClaim:
+            # Nama PVC yang menyimpan data MongoDB.
+            claimName: mongo-pvc
+
+        - # Volume untuk menyediakan file konfigurasi MongoDB.
+          name: mongo-config
+
+          # Mengambil isi volume dari ConfigMap mongo-config.
+          configMap:
+            # Nama ConfigMap sumber.
+            name: mongo-config
+
+            # Memetakan key ConfigMap menjadi file mongo.conf.
+            items:
+              - # Key yang dibaca dari ConfigMap.
+                key: mongo.conf
+
+                # Nama file yang dibuat di direktori mount.
+                path: mongo.conf
+
+        - # Volume untuk menyediakan kredensial MongoDB.
+          name: mongo-credentials
+
+          # Mengambil isi volume dari Secret mongo-secret.
+          secret:
+            # Nama Secret sumber.
+            secretName: mongo-secret

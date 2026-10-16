@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  # Nama Deployment frontend.
+  name: karsajobs-ui
+  # Menempatkan frontend di namespace aplikasi.
+  namespace: karsajobs
+  labels:
+    app: karsajobs-ui
+spec:
+  # Menjalankan satu replika frontend.
+  replicas: 1
+  selector:
+    matchLabels:
+      app: karsajobs-ui
+  template:
+    metadata:
+      labels:
+        app: karsajobs-ui
+    spec:
+      containers:
+        - name: karsajobs-ui
+          # Image frontend yang sudah dipublikasikan ke GHCR.
+          image: ghcr.io/covryzne/karsajobs-ui:latest
+          # Memeriksa registry jika image belum tersedia di node.
+          imagePullPolicy: Always
+          ports:
+            # Port yang digunakan server frontend di dalam container.
+            - containerPort: 8000
+          resources:
+            # Resource minimum yang diminta container.
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            # Batas penggunaan resource container.
+            limits:
+              cpu: 500m
+              memory: 512Mi

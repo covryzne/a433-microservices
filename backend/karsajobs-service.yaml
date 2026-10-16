@@ -1,0 +1,34 @@
+# Menggunakan API core/v1 untuk resource Service.
+apiVersion: v1
+
+# Menentukan Service untuk mengekspos backend.
+kind: Service
+
+# Menetapkan identitas Service backend.
+metadata:
+  # Nama Service yang akan digunakan Kubernetes.
+  name: karsajobs
+  # Menempatkan Service dalam namespace aplikasi.
+  namespace: karsajobs
+
+# Mendefinisikan cara Service meneruskan trafik.
+spec:
+  # Mengekspos backend melalui port pada node Kubernetes.
+  type: NodePort
+
+  # Memilih Pod backend berdasarkan label Deployment.
+  selector:
+    app: karsajobs
+
+  # Menentukan port yang disediakan Service.
+  ports:
+    - # Nama port untuk memudahkan identifikasi.
+      name: http
+      # Port yang digunakan oleh Service di dalam cluster.
+      port: 8080
+      # Port container backend yang menerima trafik.
+      targetPort: 8080
+      # Port eksternal node untuk mengakses backend.
+      nodePort: 30001
+      # Menggunakan protokol TCP untuk HTTP.
+      protocol: TCP

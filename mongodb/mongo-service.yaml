@@ -1,0 +1,34 @@
+# Menggunakan API core/v1 untuk membuat Service.
+apiVersion: v1
+
+# Menentukan resource sebagai Service untuk MongoDB.
+kind: Service
+
+# Mendefinisikan identitas Service.
+metadata:
+  # Nama DNS internal yang digunakan backend untuk mengakses MongoDB.
+  name: mongo-service
+
+  # Menempatkan Service dalam namespace aplikasi Karsa Jobs.
+  namespace: karsajobs
+
+# Menentukan bagaimana Service meneruskan koneksi ke pod MongoDB.
+spec:
+  # Mengekspos Service hanya di dalam jaringan cluster Kubernetes.
+  type: ClusterIP
+
+  # Memilih pod MongoDB berdasarkan label berikut.
+  selector:
+    # Label ini harus cocok dengan label pada template pod StatefulSet.
+    app: mongodb
+
+  # Mendefinisikan port jaringan Service.
+  ports:
+    # Mendefinisikan satu port koneksi MongoDB.
+    - name: mongodb
+
+      # Port yang digunakan klien untuk mengakses Service di dalam cluster.
+      port: 27017
+
+      # Port container MongoDB yang menerima koneksi.
+      targetPort: 27017
