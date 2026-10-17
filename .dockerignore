@@ -1,0 +1,11 @@
+# Abaikan direktori dependency hasil instalasi lokal.
+node_modules
+
+# Jangan memasukkan konfigurasi environment lokal ke image.
+.env
+
+# Abaikan metadata Git yang tidak diperlukan saat runtime.
+.git
+
+# Abaikan log npm yang dihasilkan selama pengembangan.
+npm-debug.log*
